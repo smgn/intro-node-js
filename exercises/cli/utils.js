@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 
 // this path needs to be relative to work with fs
-const contactsLocation = 'contacts.json'
+const contactsLocation = path.resolve(__dirname, 'contacts.json');
 
 /**
  * should read the contacts at the
