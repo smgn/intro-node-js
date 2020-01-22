@@ -1,38 +1,39 @@
 const http = require('http')
-const url = require('url')
 const fs = require('fs')
 const path = require('path')
+const router = require('./router');
 
 /**
  * this function is blocking, fix that
  * @param {String} name full file name of asset in asset folder
  */
-const findAsset = (name) => {
+const findAsset = async (name) => {
   const assetPath = path.join(__dirname, 'assets', name)
-  return fs.readFileSync(assetPath, {encoding: 'utf-8'}).toString()
+  const promise = new Promise((resolve, reject) => {
+    fs.readFile(assetPath, {encoding: 'utf-8'}, (err, data) => {
+      if (err) reject(err);
+      resolve(data.toString());
+    });
+  });
+  return promise;
 }
 
 const hostname = '127.0.0.1'
 const port = 3000
 
-// log incoming request coming into the server. Helpful for debugging and tracking
-const logRequest = (method, route, status) => console.log(method, route, status)
+const processStaticAsset = async (path, contentType, res) => {
+  res.writeHead(200, {'Content-Type': contentType})
+  const resource = await findAsset(path);
+  res.write(resource);
+  res.end();
+}
 
-const server = http.createServer((req, res) => {
-  const method = req.method
-  const route = url.parse(req.url).pathname
-  // this is sloppy, especially with more assets, create a "router"
-  if (route === '/') {
-    res.writeHead(200, {'Content-Type': 'text/html'})
-    res.write(findAsset('index.html'))
-    logRequest(method, route, 200)
-    res.end()
-  } else {
-    // missing asset should not cause server crash
-    throw new Error('route not found')
-    res.end()
-  }
-  // most important part, send down the asset
+router.addRoute('GET', '/', async (_, res) => processStaticAsset('index.html', 'text/html', res));
+router.addRoute('GET', '/index.html', async (_, res) => processStaticAsset('index.html', 'text/html', res));
+router.addRoute('GET', '/style.css', async (_, res) => processStaticAsset('style.css', 'text/css', res));
+
+const server = http.createServer(async (req, res) => {
+  await router.process(req, res);
 })
 
 server.listen(port, hostname, () => {
