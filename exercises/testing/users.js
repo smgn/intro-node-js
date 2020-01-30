@@ -9,24 +9,29 @@ const users = new Array(20).fill(0)
 
 // simulate async db call with promise
 const findUser = (id) => new Promise((resolve, reject) => {
+  if( typeof(id) !== 'number'){
+    return reject(new Error(`Invalid type of id: ${typeof(id)}`))
+  }
   const user = users.find(user => user.id === id)
   if (user) {
     return resolve(user)
-  }
+  } else
   reject(new Error(`No user with id "${id}"`))
 })
 
 // simulate async db call with promise
 const deleteUser = (id) => new Promise((resolve, reject) => {
-  const id = fixId(id)
+  if( typeof(id) !== 'number'){
+    return reject(new Error(`Invalid type of id: ${typeof(id)}`))
+  }
   const i = users.findIndex(user => user.id === id)
 
   if (i < 0) {
     return reject(new Error(`No user with id "${id}"`))
   }
 
-  users.slice(i, 1)
-  resolve({id})
+  const removed = users.splice(i, 1)
+  resolve(removed)
 })
 
 module.exports = {
